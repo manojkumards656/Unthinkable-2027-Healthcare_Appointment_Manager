@@ -30,53 +30,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncUser = async (firebaseUser: User | null) => {
     if (firebaseUser) {
       setUser(firebaseUser);
-      // Get role from custom claims
-      const tokenResult = await firebaseUser.getIdTokenResult(true);
-      const userRole = (tokenResult.claims.role as UserRole) || 'PATIENT';
-      setRole(userRole);
-
-      // Set session cookie for middleware
-      const idToken = await firebaseUser.getIdToken();
       try {
+        const tokenResult = await firebaseUser.getIdTokenResult(true);
+        const userRole = (tokenResult.claims.role as UserRole) || 'PATIENT';
+        setRole(userRole);
+
+        const idToken = await firebaseUser.getIdToken();
         await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken }),
         });
       } catch (err) {
-        console.error('Failed to set session cookie:', err);
+        console.error('Failed to sync auth session:', err);
       }
     } else {
       setUser(null);
       setRole(null);
       try {
         await fetch('/api/auth/session', { method: 'DELETE' });
-      } catch (err) {
-        console.error('Failed to clear session cookie:', err);
-      }
+      } catch (err) {}
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      syncUser(firebaseUser);
-    });
-    return () => unsubscribe();
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        syncUser(firebaseUser);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Auth state subscription skipped:', e);
+      setLoading(false);
+    }
   }, []);
 
   const refreshAuth = async () => {
-    if (auth.currentUser) {
+    if (auth && auth.currentUser) {
       await syncUser(auth.currentUser);
     }
   };
 
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      if (auth) {
+        await firebaseSignOut(auth);
+      }
       await fetch('/api/auth/session', { method: 'DELETE' });
     } catch (err) {
-      console.error('Failed to sign out:', err);
+      console.error('Sign out error:', err);
     } finally {
       setUser(null);
       setRole(null);

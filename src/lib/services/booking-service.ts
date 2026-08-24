@@ -1,25 +1,9 @@
 import { db } from "@/db";
 import { appointments, slots } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { Redis } from "@upstash/redis";
+import { getRedisClient } from "@/lib/redis";
 import crypto from "crypto";
 
-// ============================================================================
-// Redis Client (HTTP REST — no TCP connections)
-// ============================================================================
-
-function getRedisClient(): Redis | null {
-  if (
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
-    return new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-  }
-  return null;
-}
 
 // ============================================================================
 // Types

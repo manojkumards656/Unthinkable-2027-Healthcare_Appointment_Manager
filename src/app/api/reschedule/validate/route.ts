@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
+import { getRedisClient } from '@/lib/redis';
 import { db } from '@/db';
 import { doctors, appointments, slots } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { processSlotBooking } from '@/lib/services/booking-service';
 
-function getRedisClient(): Redis | null {
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-    return new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-  }
-  return null;
-}
 
 export async function GET(request: NextRequest) {
   try {

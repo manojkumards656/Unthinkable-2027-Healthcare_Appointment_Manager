@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { BrevoClient } from '@getbrevo/brevo';
-import { Redis } from '@upstash/redis';
+import { getRedisClient } from '@/lib/redis';
 import { db } from '@/db';
 import { emailLogs } from '@/db/schema';
 
@@ -10,13 +10,6 @@ const brevoClient = process.env.BREVO_API_KEY
   ? new BrevoClient({ apiKey: process.env.BREVO_API_KEY })
   : null;
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
 
 export interface EmailOptions {
   to: string;
@@ -173,6 +166,7 @@ export async function sendEmailWithFallback(options: EmailOptions): Promise<{
   provider: 'RESEND' | 'BREVO';
   messageId: string;
 }> {
+  const redis = getRedisClient();
   const today = getTodayDateString();
   const counterKey = `email:resend:daily:${today}`;
   let resendAvailable = false;

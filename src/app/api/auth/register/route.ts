@@ -10,6 +10,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = userRegisterSchema.parse(body);
 
+    // Verify Firebase Admin configuration
+    if (!adminAuth || !process.env.FIREBASE_ADMIN_CLIENT_EMAIL || !process.env.FIREBASE_ADMIN_PRIVATE_KEY) {
+      return NextResponse.json(
+        {
+          error:
+            'Firebase Admin credentials are missing. Please add FIREBASE_ADMIN_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY in your Vercel Environment Variables.',
+        },
+        { status: 500 }
+      );
+    }
+
     let firebaseUser;
     try {
       firebaseUser = await adminAuth.createUser({
@@ -25,11 +36,18 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-      throw firebaseErr;
+      return NextResponse.json(
+        { error: firebaseErr.message || 'Firebase account creation failed' },
+        { status: 400 }
+      );
     }
 
     // Set custom role claim in Firebase Auth
-    await setUserRole(firebaseUser.uid, validated.role);
+    try {
+      await setUserRole(firebaseUser.uid, validated.role);
+    } catch (roleErr) {
+      console.warn('Could not set custom role claim:', roleErr);
+    }
 
     // Insert user into PostgreSQL
     const [newUser] = await db

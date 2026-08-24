@@ -22,7 +22,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'PATIENT' | 'DOCTOR' | 'ADMIN'>('PATIENT');
-  const [language, setLanguage] = useState<'en' | 'ta' | 'hi'>(locale as any || 'en');
+  const [language, setLanguage] = useState<'en' | 'ta' | 'hi'>((locale as any) || 'en');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -52,14 +52,27 @@ export default function RegisterPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const text = await res.text();
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        data = { error: `Server returned status ${res.status} (${res.statusText})` };
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // 2. Sign in with Firebase Client SDK
-      await signInWithEmailAndPassword(auth, email, password);
-      await refreshAuth();
+      // 2. Sign in with Firebase Client SDK if auth is active
+      if (auth) {
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          await refreshAuth();
+        } catch (signInErr) {
+          console.warn('Auto sign-in warning:', signInErr);
+        }
+      }
 
       // 3. Redirect to dashboard
       if (role === 'DOCTOR') router.push('/dashboard/doctor');
@@ -99,65 +112,65 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+            <div>
+              <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                 {tAuth('name')}
               </label>
-              <div className="relative flex items-center">
-                <User className="w-4 h-4 absolute left-3.5 text-[hsl(var(--text-muted))]" />
+              <div className="relative mt-1">
+                <User className="w-4 h-4 text-[hsl(var(--text-muted))] absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Dr. Sarah Johnson or John Doe"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))]/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                  placeholder="John Doe"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+              <div>
+                <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                   {tAuth('email')}
                 </label>
-                <div className="relative flex items-center">
-                  <Mail className="w-4 h-4 absolute left-3.5 text-[hsl(var(--text-muted))]" />
+                <div className="relative mt-1">
+                  <Mail className="w-4 h-4 text-[hsl(var(--text-muted))] absolute left-3.5 top-3.5" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="user@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))]/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+              <div>
+                <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                   {tAuth('phone')}
                 </label>
-                <div className="relative flex items-center">
-                  <Phone className="w-4 h-4 absolute left-3.5 text-[hsl(var(--text-muted))]" />
+                <div className="relative mt-1">
+                  <Phone className="w-4 h-4 text-[hsl(var(--text-muted))] absolute left-3.5 top-3.5" />
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 9876543210"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))]/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                   />
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+              <div>
+                <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                   {tAuth('password')}
                 </label>
-                <div className="relative flex items-center">
-                  <Lock className="w-4 h-4 absolute left-3.5 text-[hsl(var(--text-muted))]" />
+                <div className="relative mt-1">
+                  <Lock className="w-4 h-4 text-[hsl(var(--text-muted))] absolute left-3.5 top-3.5" />
                   <input
                     type="password"
                     required
@@ -165,17 +178,17 @@ export default function RegisterPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))]/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+              <div>
+                <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                   {tAuth('confirmPassword')}
                 </label>
-                <div className="relative flex items-center">
-                  <Lock className="w-4 h-4 absolute left-3.5 text-[hsl(var(--text-muted))]" />
+                <div className="relative mt-1">
+                  <Lock className="w-4 h-4 text-[hsl(var(--text-muted))] absolute left-3.5 top-3.5" />
                   <input
                     type="password"
                     required
@@ -183,21 +196,21 @@ export default function RegisterPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] placeholder:text-[hsl(var(--text-muted))]/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                   />
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+              <div>
+                <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                   {tAuth('role')}
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] font-medium focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                  className="w-full mt-1 p-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                 >
                   <option value="PATIENT">{tAuth('rolePatient')}</option>
                   <option value="DOCTOR">{tAuth('roleDoctor')}</option>
@@ -205,14 +218,14 @@ export default function RegisterPage() {
                 </select>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-[hsl(var(--text-primary))]">
+              <div>
+                <label className="text-xs font-bold text-[hsl(var(--text-primary))]">
                   {tAuth('preferredLanguage')}
                 </label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] font-medium focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
+                  className="w-full mt-1 p-2.5 rounded-xl bg-[hsl(var(--bg-root))] border border-[hsl(var(--border-color))] text-sm text-[hsl(var(--text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary-action))]"
                 >
                   <option value="en">English</option>
                   <option value="ta">தமிழ் (Tamil)</option>
@@ -224,19 +237,30 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="accessible-button w-full py-3 rounded-xl bg-[hsl(var(--primary-action))] text-white font-bold hover:bg-[hsl(var(--primary-action-hover))] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+              className="w-full py-3.5 rounded-xl bg-[hsl(var(--primary-action))] text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-md cursor-pointer"
             >
-              <span>{loading ? tCommon('loading') : tAuth('registerButton')}</span>
-              <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                tCommon('loading')
+              ) : (
+                <>
+                  <span>{tAuth('registerButton')}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 
-          <p className="text-center text-xs text-[hsl(var(--text-muted))]">
-            {tAuth('hasAccount')}{' '}
-            <Link href="/login" className="font-bold text-[hsl(var(--primary-action))] hover:underline">
-              {tAuth('loginButton')}
-            </Link>
-          </p>
+          <div className="text-center pt-2 border-t border-[hsl(var(--border-color))]">
+            <p className="text-xs text-[hsl(var(--text-muted))]">
+              {tAuth('hasAccount')}{' '}
+              <Link
+                href="/login"
+                className="font-bold text-[hsl(var(--primary-action))] hover:underline"
+              >
+                {tAuth('loginButton')}
+              </Link>
+            </p>
+          </div>
         </div>
       </main>
     </div>
